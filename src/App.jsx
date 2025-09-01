@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, Clock, DollarSign, Hash, Target, Sparkles, Copy, Check, Moon, Sun } from 'lucide-react';
 
-const API_BASE_URL = 'http://127.0.0.1:8500'; // Change for production
+const API_BASE_URL = 'https://postifyai-2.onrender.com'; // Change for production
 
 export default function LinkedInPostGenerator() {
   const [formData, setFormData] = useState({
