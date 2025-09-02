@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, Clock, DollarSign, Hash, Target, Sparkles, Copy, Check, Moon, Sun } from 'lucide-react';
+import { Send, Loader2, Clock, DollarSign, Hash, Target, Sparkles, Copy, Check, Moon, Sun, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
-const API_BASE_URL = 'https://postifyai-2.onrender.com'; // Change for production
-
+const API_BASE_URL = 'https://postifyai-2.onrender.com'; 
 export default function LinkedInPostGenerator() {
   const [formData, setFormData] = useState({
     topic: '',
@@ -18,6 +17,8 @@ export default function LinkedInPostGenerator() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [metrics, setMetrics] = useState(null);
+  const [citations, setCitations] = useState([]); // Added citations state
+  const [showCitations, setShowCitations] = useState(false); // Toggle citations view
   const [tones, setTones] = useState([
     { value: 'professional', label: 'Professional' },
     { value: 'casual', label: 'Casual' },
@@ -87,6 +88,8 @@ export default function LinkedInPostGenerator() {
     setLoading(true);
     setPosts([]);
     setMetrics(null);
+    setCitations([]); // Reset citations
+    setShowCitations(false); // Reset citations view
 
     try {
       const response = await fetch(`${API_BASE_URL}/generate-posts`, {
@@ -103,6 +106,7 @@ export default function LinkedInPostGenerator() {
 
       const data = await response.json();
       setPosts(data.posts);
+      setCitations(data.citations || []); // Set citations from response
       setMetrics({
         generation_time: data.generation_time,
         tokens_used: data.tokens_used,
@@ -136,6 +140,98 @@ export default function LinkedInPostGenerator() {
       fullContent += '\n\n' + post.cta;
     }
     return fullContent;
+  };
+
+  // Citations Modal Component
+  const CitationsModal = ({ citations, show, onClose }) => {
+    if (!show) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className={`max-w-4xl w-full max-h-[80vh] overflow-y-auto rounded-2xl shadow-2xl ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <div className={`sticky top-0 p-6 border-b ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <h2 className={`text-2xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Sources & Citations
+              </h2>
+              <button
+                onClick={onClose}
+                className={`p-2 rounded-lg hover:bg-opacity-10 transition-colors ${
+                  isDarkMode ? 'hover:bg-white' : 'hover:bg-gray-900'
+                }`}
+              >
+                <span className={`text-2xl ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>×</span>
+              </button>
+            </div>
+            <p className={`mt-2 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Information sources used to generate your LinkedIn posts
+            </p>
+          </div>
+          
+          <div className="p-6">
+            {citations.length > 0 ? (
+              <div className="space-y-4">
+                {citations.map((citation, index) => (
+                  <div key={index} className={`p-4 rounded-lg border ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600' 
+                      : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className={`font-semibold text-lg ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {citation.title}
+                      </h3>
+                      <span className={`text-sm px-2 py-1 rounded ${
+                        isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        Source {index + 1}
+                      </span>
+                    </div>
+                    <p className={`text-sm mb-3 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      {citation.snippet}
+                    </p>
+                    <a
+                      href={citation.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Visit Source
+                    </a>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className={`w-16 h-16 mx-auto mb-4 ${
+                  isDarkMode ? 'text-gray-600' : 'text-gray-300'
+                }`} />
+                <p className={`text-lg ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  No citations available for this generation
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -410,6 +506,17 @@ export default function LinkedInPostGenerator() {
                     </div>
                   </div>
                 </div>
+
+                {/* Citations Button */}
+                {citations.length > 0 && (
+                  <button
+                    onClick={() => setShowCitations(true)}
+                    className="w-full mt-4 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    View Sources & Citations ({citations.length})
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -436,17 +543,30 @@ export default function LinkedInPostGenerator() {
 
             {posts.length > 0 && !loading && (
               <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h2 className={`text-3xl font-bold mb-2 ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    Your LinkedIn Posts
-                  </h2>
-                  <p className={`${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Ready to copy and share on LinkedIn
-                  </p>
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className={`text-3xl font-bold mb-2 ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      Your LinkedIn Posts
+                    </h2>
+                    <p className={`${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Ready to copy and share on LinkedIn
+                    </p>
+                  </div>
+                  
+                  {/* Mobile Citations Button */}
+                  {citations.length > 0 && (
+                    <button
+                      onClick={() => setShowCitations(true)}
+                      className="lg:hidden flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Sources ({citations.length})
+                    </button>
+                  )}
                 </div>
 
                 {posts.map((post, index) => (
@@ -580,6 +700,13 @@ export default function LinkedInPostGenerator() {
           </p>
         </div>
       </div>
+
+      {/* Citations Modal */}
+      <CitationsModal 
+        citations={citations}
+        show={showCitations}
+        onClose={() => setShowCitations(false)}
+      />
     </div>
   );
 }
